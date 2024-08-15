@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crazy Blood Test Analyzer</title>
+    <link rel="icon" href="data:,">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        #dropArea {
+            border: 3px dashed #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #dropArea:hover {
+            background-color: #ecf0f1;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        #uploadButton {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        
+        #uploadButton:hover {
+            background-color: #2980b9;
+        }
+        
+        #result {
+            margin-top: 30px;
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .loading:after {
+            content: '\2026';
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+            animation: ellipsis-dot 1s infinite .3s;
+            animation-fill-mode: forwards;
+            width: 1.25em;
+        }
+        
+        @keyframes ellipsis-dot {
+            25% { content: '\2024'; }
+            50% { content: '\2025'; }
+            75% { content: '\2026'; }
+            100% { content: '\2026'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Crazy Blood Test Analyzer</h1>
+        <div id="dropArea">
+            <p>Drag & Drop your PDF here or click to select</p>
+            <input type="file" id="fileInput" accept=".pdf">
+            <button id="uploadButton">Upload & Analyze</button>
+        </div>
+        <div id="loading" class="loading">Analyzing your blood test report</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        dropArea.addEventListener('click', () => fileInput.click());
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = '#ecf0f1';
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.backgroundColor = 'transparent';
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = 'transparent';
+            fileInput.files = e.dataTransfer.files;
+        });
+
+        uploadButton.addEventListener('click', () => {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.type === 'application/pdf') {
+                    uploadFile(file);
+                } else {
+                    alert('Please upload a PDF file.');
+                }
+            } else {
+                alert('Please select a file first.');
+            }
+        });
+        function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    loading.style.display = 'block';
+    result.textContent = '';
+
+    fetch('/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        loading.style.display = 'none';
+        if (data.error) {
+            result.textContent = `Error: ${data.error}`;
+        } else {
+            result.innerHTML = `
+                <h2>Blood Test Analysis</h2>
+                <p>${data.blood_test_analysis}</p>
+                <h2>Relevant Articles</h2>
+                <p>${data.relevant_articles}</p>
+                <h2>Health Recommendations</h2>
+                <p>${data.health_recommendations}</p>
+            `;
+        }
+    })
+    .catch(error => {
+        loading.style.display = 'none';
+        result.textContent = `Error: ${error.message}`;
+        console.error('Error:', error);
+    });
+}
+    </script>
+</body>
+</html>
